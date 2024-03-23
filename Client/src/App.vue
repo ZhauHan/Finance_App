@@ -20,3 +20,15 @@ import { RouterLink, RouterView } from 'vue-router'
   </header>
   <RouterView />
 </template>
+<script>
+import { useTransactionStore } from './stores/transactionStore';
+
+export default {
+  created() {
+    const transactionStore = useTransactionStore();
+    transactionStore.loadTransactions();
+    return { transactionStore }
+  }
+}
+
+</script>
