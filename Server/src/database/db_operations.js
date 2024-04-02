@@ -1,6 +1,7 @@
 const db = require('./connection');
+const { transactionSchema } = require('./schema');
 
-function getAllTransactions() {
+function db_getTransactions() {
   return new Promise((resolve, reject) => {
     db.query('SELECT * FROM transactions', (err, transactions) => {
       if (err) {
@@ -24,11 +25,11 @@ async function fetchTransactions() {
   }
 }
 
-function addTransactions(amount, date, type, category) {
+function db_addTransactions(transaction) {
   return new Promise((resolve, reject) => {
     db.query(
       'INSERT INTO transactions (amount, transaction_date, transaction_type, category) VALUES (?, ?, ?, ?)',
-      [amount, date, type, category],
+      [transaction.amount, transaction.date, transaction.type, transaction.category],
       (err, result) => {
         if (err) {
           console.error('An error occurred while adding a transaction', err);
@@ -42,21 +43,46 @@ function addTransactions(amount, date, type, category) {
   });
 }
 
-async function insertTransaction(transaction) {
+async function addTransactions(transaction) {
+  const { error } = transactionSchema.validate(transaction);
+  if (error) {
+    console.error('Validation error:', error.details[0].message);
+    return;
+  }
   try {
-    const result = await addTransactions(100, '2021-09-01', 'income', 'salary');
+    const result = await db_addTransactions(transaction);
     console.log(result);
     console.log('Transaction added');
   } catch (err) {
     console.error('An error occurred:', err);
-  } finally {
-    db.end((err) => {
-      if (err) {
-        console.error('An error occurred while disconnecting:', err);
-      } else {
-        console.log('Disconnected from the database');
+  }
+}
+
+function db_deleteTransaction(transactionId) {
+  return new Promise((resolve, reject) => {
+    db.query(
+      'DELETE FROM transactions WHERE transaction_id = ?',
+      [transactionId],
+      (err, result) => {
+        if (err) {
+          console.error('An error occurred while deleting a transaction', err);
+          reject(err);
+        } else {
+          console.log('Transaction deleted');
+          resolve(result);
+        }
       }
-    });
+    );
+  });
+}
+
+async function deleteTransaction(transactionId) {
+  try {
+    const result = await db_deleteTransaction(transactionId);
+    console.log(result);
+    console.log('Transaction deleted');
+  } catch (err) {
+    console.error('An error occurred:', err);
   }
 }
 

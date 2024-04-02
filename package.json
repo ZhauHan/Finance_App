@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@sideway/address": "^5.0.0",
+    "@sideway/formula": "^3.0.1",
+    "joi": "^17.12.2"
+  }
+}
