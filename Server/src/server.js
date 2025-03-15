@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./database/connection');
+const transactionRoutes = require('./routes/transactions');
+const userRoutes = require('./routes/users');
 
 const app = express();
 
@@ -15,16 +17,8 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-app.get('/api/transactions', (req, res) => {
-    fetchTransactions()
-    .then(transactions => {
-      res.json(transactions);
-    })
-    .catch(err => {
-      console.error('An error occurred:', err);
-      res.status(500).send('An error occurred while fetching transactions');
-    });
-});
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/users', userRoutes);
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
