@@ -1,89 +1,127 @@
-const db = require('./connection');
-const { transactionSchema } = require('./schema');
+const User = require('./models/User');
+const Transaction = require('./models/Transaction');
 
-function db_getTransactions() {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM transactions', (err, transactions) => {
-      if (err) {
-        console.error('An error occurred while getting all transactions', err);
-        reject(err);
-      } else {
-        resolve(transactions);
-      }
-    });
-  });
+// Utility function for error handling
+function handleError(operation, err) {
+    console.error(`Error during ${operation}:`, err.message);
+    throw new Error(`An error occurred during ${operation}`);
 }
 
-async function fetchTransactions() {
-  try {
-    const transactions = await getAllTransactions();
-    console.log(transactions);
-    return transactions;
-  } catch (err) {
-    console.error('An error occurred:', err);
-    return [];
-  }
+// User Operations
+async function createUser(user) {
+    try {
+        const { error } = User.validate(user);
+        if (error) throw new Error(error.details[0].message);
+        
+        const newUser = new User(user);
+        return await newUser.save();
+    } catch (err) {
+        handleError('user creation', err);
+    }
 }
 
-function db_addTransactions(transaction) {
-  return new Promise((resolve, reject) => {
-    db.query(
-      'INSERT INTO transactions (amount, transaction_date, transaction_type, category) VALUES (?, ?, ?, ?)',
-      [transaction.amount, transaction.date, transaction.type, transaction.category],
-      (err, result) => {
-        if (err) {
-          console.error('An error occurred while adding a transaction', err);
-          reject(err);
-        } else {
-          console.log('Transaction added');
-          resolve(result);
-        }
-      }
-    );
-  });
+async function fetchAllUsers() {
+    try {
+        return await User.find();
+    } catch (err) {
+        handleError('fetching all users', err);
+    }
 }
 
-async function addTransactions(transaction) {
-  const { error } = transactionSchema.validate(transaction);
-  if (error) {
-    console.error('Validation error:', error.details[0].message);
-    return;
-  }
-  try {
-    const result = await db_addTransactions(transaction);
-    console.log(result);
-    console.log('Transaction added');
-  } catch (err) {
-    console.error('An error occurred:', err);
-  }
+async function fetchUserById(userId) {
+    try {
+        const user = await User.findById(userId);
+        if (!user) throw new Error('User not found');
+        return user;
+    } catch (err) {
+        handleError('fetching user by ID', err);
+    }
 }
 
-function db_deleteTransaction(transactionId) {
-  return new Promise((resolve, reject) => {
-    db.query(
-      'DELETE FROM transactions WHERE transaction_id = ?',
-      [transactionId],
-      (err, result) => {
-        if (err) {
-          console.error('An error occurred while deleting a transaction', err);
-          reject(err);
-        } else {
-          console.log('Transaction deleted');
-          resolve(result);
-        }
-      }
-    );
-  });
+async function deleteUser(userId) {
+    try {
+        const user = await User.findByIdAndRemove(userId);
+        if (!user) throw new Error('User not found');
+        return user;
+    } catch (err) {
+        handleError('deleting user', err);
+    }
+}
+
+// Transaction Operations
+async function createTransaction(transaction) {
+    try {
+        const { error } = Transaction.validate(transaction);
+        if (error) throw new Error(error.details[0].message);
+        
+        const newTransaction = new Transaction(transaction);
+        return await newTransaction.save();
+    } catch (err) {
+        handleError('transaction creation', err);
+    }
+}
+
+async function updateTransaction(transactionId, transaction) {
+    try {
+        const { error } = Transaction.validate(transaction);
+        if (error) throw new Error(error.details[0].message);
+        
+        const updatedTransaction = await Transaction.findByIdAndUpdate(transactionId, transaction, { new: true });
+        if (!updatedTransaction) throw new Error('Transaction not found');
+        
+        return updatedTransaction;
+    } catch (err) {
+        handleError('updating transaction', err);
+    }
 }
 
 async function deleteTransaction(transactionId) {
-  try {
-    const result = await db_deleteTransaction(transactionId);
-    console.log(result);
-    console.log('Transaction deleted');
-  } catch (err) {
-    console.error('An error occurred:', err);
-  }
+    try {
+        const transaction = await Transaction.findByIdAndRemove(transactionId);
+        if (!transaction) throw new Error('Transaction not found');
+        return transaction;
+    } catch (err) {
+        handleError('deleting transaction', err);
+    }
 }
 
-module.exports = { fetchTransactions, insertTransaction };
+async function fetchAllTransactions() {
+    try {
+        return await Transaction.find();
+    } catch (err) {
+        handleError('fetching all transactions', err);
+    }
+}
+
+async function fetchTransactionById(transactionId) {
+    try {
+        const transaction = await Transaction.findById(transactionId);
+        if (!transaction) throw new Error('Transaction not found');
+        return transaction;
+    } catch (err) {
+        handleError('fetching transaction by ID', err);
+    }
+}
+
+async function fetchUserTransactions(userId) {
+    try {
+        const transactions = await Transaction.find({ user_id: userId });
+        if (!transactions.length) throw new Error('No transactions found for this user');
+        return transactions;
+    } catch (err) {
+        handleError('fetching user transactions', err);
+    }
+}
+
+module.exports = { 
+    createUser, 
+    fetchAllUsers,
+    fetchUserById,
+    deleteUser, 
+    createTransaction, 
+    updateTransaction, 
+    deleteTransaction, 
+    fetchAllTransactions, 
+    fetchTransactionById, 
+    fetchUserTransactions 
+};

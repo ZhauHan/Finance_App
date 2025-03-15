@@ -1,29 +1,14 @@
 require('dotenv').config();
-const mysql = require('mysql2');
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
+const mongoose = require('mongoose');
 
-db.connect((err) => {
-  if (err) throw err;
-  console.log('Connected to database');
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.Mongo_URI);
+        console.log('Connected to the database');
+    } catch (err) {
+        console.error(err.message);
+        process.exit(1);
+    }
+}
 
-  const createTable = `
-  CREATE TABLE IF NOT EXISTS transactions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    amount DECIMAL(10, 2),
-    transaction_date DATE,
-    transaction_type ENUM('income', 'expense'),
-    category VARCHAR(50)
-  )
-  `;
-  db.query(createTable, (err, result) => {
-    if (err) throw err;
-    console.log('Table created');
-  });
-});
-
-module.exports = db;
+module.exports = connectDB;
